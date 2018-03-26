@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/maxime/catkin_ws/src/fast_klt_vo/build/devel/setup.sh

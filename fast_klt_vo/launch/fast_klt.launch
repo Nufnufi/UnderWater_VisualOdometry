@@ -1,0 +1,29 @@
+<launch>
+
+ <node pkg="fast_klt_vo" type="fast_klt_main" name="vo">
+
+    <param name="start_x" value="-0.001058"/>
+    <param name="start_y" value ="-0.000489"/>
+    <param name="start_z" value="13.948603"/>
+
+    <param name="start_rot_x" value="-0.027858"/>
+    <param name="start_rot_y" value="0.032963"/>
+    <param name="start_rot_z" value="-0.976291"/>
+    <param name="start_rot_w" value = "0.212118"/>
+
+    <param name="min_feature_recalculate" value = "14"/>
+    <param name="min_feature" value="6"/>
+    <param name="ransac_prob" value="0.999"/>
+    <param name="ransac_threshold" value="1.0"/>
+  </node>
+
+ <node pkg="fast_klt_vo" type="fast_klt_main" name="camera">
+    <param name="focal" value="405.6385"/>
+    <param name="xpp" value ="189.9054"/>
+    <param name="ypp" value="139.915"/>
+    <param name="scale" value="1"/>
+    <param name="scale_threshold" value="0.1"/>
+    <param name="tf_frame" value="camera"/>  
+  </node>
+
+</launch>

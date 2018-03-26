@@ -1,0 +1,8 @@
+prefix=/home/maxime/catkin_ws/src/fast_klt_vo/build/devel
+
+Name: fast_klt_vo
+Description: Description of fast_klt_vo
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/maxime/catkin_ws/src/fast_klt_vo/build/devel/lib 
+Requires: 

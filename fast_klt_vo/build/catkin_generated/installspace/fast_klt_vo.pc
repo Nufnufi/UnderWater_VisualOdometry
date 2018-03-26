@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: fast_klt_vo
+Description: Description of fast_klt_vo
+Version: 0.0.0
+Cflags: 
+Libs: -L/usr/local/lib 
+Requires: 
