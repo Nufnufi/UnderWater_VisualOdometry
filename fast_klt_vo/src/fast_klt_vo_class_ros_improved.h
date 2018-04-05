@@ -9,6 +9,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include "vo_features.h"
 #include <tf/transform_datatypes.h>
+#include "math.h"
+
+
+
 
 using namespace cv;
 using namespace std;
@@ -46,14 +50,19 @@ public:
         nh.param<double>("/vo/cov_imu_y", this->cov_imu_y, 0.1);
         nh.param<double>("/vo/cov_imu_z", this->cov_imu_z, 0.1);
 
+        //Parameters for the topics
+        nh.param<string>("/vo/camera_topic_sub", this->camera_topic_sub,"/camera/image_raw");
+        nh.param<string>("/vo/imu_topic_sub", this->imu_topic_sub,"/imu_xsens_mti_ros");
+        nh.param<string>("/vo/groundtruth_topic_sub", this->groundtruth_topic_sub,"/odometry");
+
 
         //Parameters for camera
-        nh.param<double>("/camera/focal", this->focal, 405.6385);   //718
-        nh.param<double>("/camera/xpp", this->xpp, 189.9054);       //607.1928
-        nh.param<double>("/camera/ypp", this->ypp, 139.915);        //185.2157
-        nh.param<double>("/camera/scale", this->scale, 1);
-        nh.param<double>("/camera/scale_threshold", this->scale_threshold, 0.1);
-        nh.param<string>("/camera/tf_frame", this->tf_frame, "base_footprint");
+        nh.param<double>("/vo/focal", this->focal, 405.6385);   //718
+        nh.param<double>("/vo/xpp", this->xpp, 189.9054);       //607.1928
+        nh.param<double>("/vo/ypp", this->ypp, 139.915);        //185.2157
+        nh.param<double>("/vo/scale", this->scale, 1);
+        nh.param<string>("/vo/tf_frame", this->tf_frame, "base_footprint");
+
 
         //Parameters for KLT algorithm
         nh.param<double>("/vo/min_feature_recalculate", this->min_feature_recalculate, 14);   //Set min number of feature for redetection
@@ -70,11 +79,12 @@ public:
         // introduce publishers
         ekf_vo_pub = nh.advertise<nav_msgs::Odometry>("/vo", 10);
         ekf_imu_pub = nh.advertise<sensor_msgs::Imu>("/imu_data", 10);
+        error_pub = nh.advertise<geometry_msgs::PoseStamped>("/euclidean_error", 10);
 
         // introduce subscribers to camera image and ground truth odometry
-        camera_sub = nh.subscribe("/camera/image_raw", 10, &fast_klt_vo::cameraCallback, this);
-        truth_odometry_sub = nh.subscribe("/odometry", 10, &fast_klt_vo::truth_odometryCallback, this);
-        imu_sub = nh.subscribe("/imu_xsens_mti_ros", 10, &fast_klt_vo::imuCallback, this);
+        camera_sub = nh.subscribe(camera_topic_sub, 10, &fast_klt_vo::cameraCallback, this);
+        truth_odometry_sub = nh.subscribe(groundtruth_topic_sub, 10, &fast_klt_vo::truth_odometryCallback, this);
+        imu_sub = nh.subscribe(imu_topic_sub, 10, &fast_klt_vo::imuCallback, this);
         ekf_odo_sub = nh.subscribe("/robot_pose_ekf/odom_combined", 10, &fast_klt_vo::ekfodoCallback, this);
 
         //Convert start rotation from Quaternion to rad
@@ -109,6 +119,7 @@ public:
         ros::Rate loop_rate(100);
 
         Mat img_1, img_2;   //Matrices to store the images
+
 
         //Create results document
         ofstream myfile;
@@ -175,8 +186,10 @@ public:
         namedWindow("Road facing camera", WINDOW_AUTOSIZE);// Create a window for display.
         namedWindow("Trajectory on x/y axis", WINDOW_AUTOSIZE);// Create a window for display.
         namedWindow("Trajectory on x/z axis", WINDOW_AUTOSIZE);// Create a window for display.
-        Mat traj = Mat::zeros(1000, 1000, CV_8UC3);
-        Mat traj2 = Mat::zeros(1000, 1000, CV_8UC3);
+        namedWindow("Trajectory on x/z axis", WINDOW_AUTOSIZE);// Create a window for display.
+        Mat traj = Mat::zeros(1000, 1000, CV_8UC3);     //Display trajectory x/y axis
+        Mat traj2 = Mat::zeros(1000, 1000, CV_8UC3);    //Display trajectory x/z axis
+
         int counter;
         counter = 0;
 
@@ -222,9 +235,9 @@ public:
                     estimated_pose.pose.pose.orientation.x = (float)(sqrt(std::max(0.0, (1.0 + R.at<double>(0,0) + R_f.at<double>(0,0) - R.at<double>(1,1) - R_f.at<double>(1,1) - R.at<double>(2,2) - R_f.at<double>(2,2)))) / 2.0);
                     estimated_pose.pose.pose.orientation.y = (float)(sqrt(std::max(0.0, (1.0 - R.at<double>(0,0) - R_f.at<double>(0,0) + R.at<double>(1,1) + R_f.at<double>(1,1) - R.at<double>(2,2) - R_f.at<double>(2,2)))) / 2.0);
                     estimated_pose.pose.pose.orientation.z = (float)(sqrt(std::max(0.0, (1.0 - R.at<double>(0,0) - R_f.at<double>(0,0) - R.at<double>(1,1) - R_f.at<double>(1,1) + R.at<double>(2,2) + R_f.at<double>(2,2)))) / 2.0);
-                    //estimated_pose.pose.pose.orientation.x = copysign(estimated_pose.pose.pose.orientation.x, R.at<double>(2,1) + R_f.at<double>(2,1) - R.at<double>(1,2) - R_f.at<double>(1,2));
-                    //estimated_pose.pose.pose.orientation.y = copysign(estimated_pose.pose.pose.orientation.y, R.at<double>(0,2) + R_f.at<double>(0,2) - R.at<double>(2,0) - R_f.at<double>(2,0));
-                    //estimated_pose.pose.pose.orientation.z = copysign(estimated_pose.pose.pose.orientation.z, R.at<double>(1,0) + R_f.at<double>(1,0) - R.at<double>(0,1) - R_f.at<double>(0,1));
+                    estimated_pose.pose.pose.orientation.x = copysign(estimated_pose.pose.pose.orientation.x, R.at<double>(2,1) + R_f.at<double>(2,1) - R.at<double>(1,2) - R_f.at<double>(1,2));
+                    estimated_pose.pose.pose.orientation.y = copysign(estimated_pose.pose.pose.orientation.y, R.at<double>(0,2) + R_f.at<double>(0,2) - R.at<double>(2,0) - R_f.at<double>(2,0));
+                    estimated_pose.pose.pose.orientation.z = copysign(estimated_pose.pose.pose.orientation.z, R.at<double>(1,0) + R_f.at<double>(1,0) - R.at<double>(0,1) - R_f.at<double>(0,1));
                     estimated_pose.pose.covariance[0] = (float)cov_x;
                     estimated_pose.pose.covariance[7] = (float)cov_y;
                     estimated_pose.pose.covariance[14] = (float)cov_z;
@@ -259,23 +272,30 @@ public:
                     circle(traj, Point(x, y) ,1, CV_RGB(255,0,0), 2);
                     circle(traj, Point(x_truth, y_truth) ,1, CV_RGB(0,255,0), 2);
                     rectangle( traj, Point(10, 30), Point(550, 50), CV_RGB(0,0,0), CV_FILLED);
-                    sprintf(text, "Estimated pose (Red): x = %fm, y = %fm ", t_f.at<double>(0), t_f.at<double>(1));
-                    sprintf(text2,"Truth pose (Green) : x_truth = %fm, y_truth = %fm", latest_ground_truth.pose.position.x, latest_ground_truth.pose.position.y);
+                    sprintf(text, "Estimated x/y pose (Red)");
+                    sprintf(text2,"Truth x/y pose (Green)");
                     putText(traj, text, textOrg, fontFace, fontScale, Scalar::all(255), thickness, 8);
                     putText(traj, text2, textOrg2, fontFace, fontScale, Scalar::all(255), thickness, 8);
 
                     circle(traj2, Point(x, z) ,1, CV_RGB(255,0,255), 2);
                     circle(traj2, Point(x_truth, z_truth) ,1, CV_RGB(0,0,255), 2);
                     rectangle( traj2, Point(10, 30), Point(550, 50), CV_RGB(0,0,0), CV_FILLED);
-                    sprintf(text, "Estimated pose (Pink): x = %fm, z = %fm ", t_f.at<double>(0), t_f.at<double>(2));
-                    sprintf(text2,"Truth pose (Blue) : x_truth = %fm, z_truth = %fm", latest_ground_truth.pose.position.x, latest_ground_truth.pose.position.z);
+                    sprintf(text, "Estimated x/z pose (Pink)");
+                    sprintf(text2,"Truth x/z pose (Blue)");
                     putText(traj2, text, textOrg, fontFace, fontScale, Scalar::all(255), thickness, 8);
                     putText(traj2, text2, textOrg2, fontFace, fontScale, Scalar::all(255), thickness, 8);
 
-                    imshow( "Road facing camera", currImage_c );
+                    //imshow( "Road facing camera", currImage_c );
                     imshow( "Trajectory on x/y axis", traj);
                     imshow( "Trajectory on x/z axis", traj2);
+
                     waitKey(1);
+
+                    geometry_msgs::PoseStamped error;
+                    error.header.stamp =  ros::Time::now();
+                    error.pose.position.x = (float)sqrt(pow((latest_ground_truth.pose.position.x - t_f.at<double>(0)), 2) + pow((latest_ground_truth.pose.position.y - t_f.at<double>(1)), 2) + pow((latest_ground_truth.pose.position.z - t_f.at<double>(2)),2));
+                    error_pub.publish(error);
+
 
                     //Reset counter
                     counter = 0;
@@ -295,10 +315,8 @@ public:
                         max_num_features = currFeatures.size();
                     }
                     cout << "Current min execution time = "<<min_elapsed_time << "s, current max execution time = "<<max_elapsed_time<<"s"<<endl;
-                    cout << "Corresponding to min number of features = "<<min_num_features << ", max umber of features = "<<max_num_features<<endl;
+                    cout << "Corresponding to min number of features = "<<min_num_features << ", max number of features = "<<max_num_features<<endl;
                     //cout << "Execution time estimated to " << elapsed_time << "s" << endl;
-                    //cout <<"R_t = "<< R_f << endl;
-                    //cout <<"t_f = "<< t_f << endl;
 
                     ros::spinOnce();
                     loop_rate.sleep();
@@ -329,6 +347,9 @@ public:
                 latest_imu_data.header.frame_id = tf_frame;
                 latest_imu_data.header.stamp = ros::Time::now();
                 ekf_imu_pub.publish(latest_imu_data);
+
+                //
+
             }
             ros::spinOnce();
             loop_rate.sleep();
@@ -365,6 +386,7 @@ public:
        return;
     }
 
+    //IMU Callback
     void imuCallback(const sensor_msgs::Imu::ConstPtr& msg_in)
     {
         //Store latest imu information with corresponding time stamp
@@ -375,6 +397,7 @@ public:
         return;
     }
 
+    //EKF odometry callback
     void ekfodoCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg_in)
     {      
         double loc_rot_x,loc_rot_y, loc_rot_z, loc_rot_w;
@@ -406,6 +429,7 @@ protected:
     ros::Subscriber ekf_odo_sub;
     ros::Publisher ekf_vo_pub;
     ros::Publisher ekf_imu_pub;
+    ros::Publisher error_pub;
 
     //Variable for initialization
     int init_counter;
@@ -417,11 +441,13 @@ protected:
 
     //Parameters for the camera
     double scale;
-    double scale_threshold;
     double focal;
     double xpp;
     double ypp;
     string tf_frame;
+
+    //Parameters for the topics
+    string camera_topic_sub, imu_topic_sub, groundtruth_topic_sub;
 
     //Variables for position and rotation
     double start_x;
