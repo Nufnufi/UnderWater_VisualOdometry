@@ -258,14 +258,15 @@ public:
 
                     //Display trajectory
                     int display_start_x = 600;
-                    int display_start_y = 200;
+                    int display_start_y = 800;
                     int display_start_z = 200;
-                    int x = int(t_f.at<double>(0)*5) + display_start_x;
-                    int y = int(t_f.at<double>(1)*5) + display_start_y;
-                    int z = int(t_f.at<double>(2)*5) + display_start_z;
-                    int x_truth = int(latest_ground_truth.pose.position.x*5) + display_start_x;
-                    int y_truth = int(latest_ground_truth.pose.position.y*5) + display_start_y;
-                    int z_truth = int(latest_ground_truth.pose.position.z*5) + display_start_z;
+                    double display_coeff = 2;
+                    int x = int(t_f.at<double>(0)*display_coeff) + display_start_x;
+                    int y = int(t_f.at<double>(1)*display_coeff) + display_start_y;
+                    int z = int(t_f.at<double>(2)*display_coeff) + display_start_z;
+                    int x_truth = int(latest_ground_truth.pose.position.x*display_coeff) + display_start_x;
+                    int y_truth = int(latest_ground_truth.pose.position.y*display_coeff) + display_start_y;
+                    int z_truth = int(latest_ground_truth.pose.position.z*display_coeff) + display_start_z;
                     cout<<"x computed = "<<t_f.at<double>(0)<<"  y_computed = "<<t_f.at<double>(1)<<endl;
                     cout<<"x truth = "<<latest_ground_truth.pose.position.x<<", y_truth = "<<latest_ground_truth.pose.position.y<<endl;
 
