@@ -21,3 +21,11 @@ ${OpenCV_INCLUDE_DIRS})
 add_executable(image_converter_ros src/image_converter_ros.cpp)
 target_link_libraries(image_converter_ros ${catkin_LIBRARIES})
 target_link_libraries(image_converter_ros ${OpenCV_LIBRARIES})
+
+add_executable(pose_display_ros src/pose_display_ros.cpp)
+target_link_libraries(pose_display_ros ${catkin_LIBRARIES})
+target_link_libraries(pose_display_ros ${OpenCV_LIBRARIES})
+
+add_executable(truth_display_ros src/truth_display_ros.cpp)
+target_link_libraries(truth_display_ros ${catkin_LIBRARIES})
+target_link_libraries(truth_display_ros ${OpenCV_LIBRARIES})

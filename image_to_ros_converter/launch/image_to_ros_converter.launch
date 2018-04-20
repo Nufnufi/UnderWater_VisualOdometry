@@ -2,12 +2,13 @@
 
  <node pkg="image_to_ros_converter" type="image_converter_ros" name="image_converter_ros" output="screen">
 
-    <param name="start_image" value="29466"/>
-    <param name="last_image" value ="29600"/>
-    <param name="path_to_image" value= "/home/maxime/Datasets/Forward_looking_camera_(GoPro)/101GOPRO/G00"/>
+    <param name="start_image" value="31000"/>
+    <param name="last_image" value ="31189"/>
+    <param name="path_to_image" value= "/home/maxime/Datasets/Forward_looking_camera_GoPro/104GOPRO/G00"/> 
+    <!-- <param name="path_to_image" value= "/home/maxime/Datasets/Downward_looking_camera_GoPro/DIVE_1/105GOPRO/G00"/>-->
     <param name="image_extension" value=".JPG"/>
     <param name="fps" value="1"/>
-    <param name="topic_color" value="/color"/>
+    <param name="topic_color" value="/camera/image_raw"/>
     <param name="topic_grey" value="/grey_image"/>
 
   </node>

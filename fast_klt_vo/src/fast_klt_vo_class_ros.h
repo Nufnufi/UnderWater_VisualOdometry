@@ -37,12 +37,12 @@ public:
         nh.param<double>("/vo/start_rot_w", this->rot_w, 0.212118);
 
         //Parameters for camera
-        nh.param<double>("/camera/focal", this->focal, 405.6385);   //718
-        nh.param<double>("/camera/xpp", this->xpp, 189.9054);       //607.1928
-        nh.param<double>("/camera/ypp", this->ypp, 139.915);        //185.2157
-        nh.param<double>("/camera/scale", this->scale, 1);
-        nh.param<double>("/camera/scale_threshold", this->scale_threshold, 0.1);
-        nh.param<string>("/camera/tf_frame", this->tf_frame, "camera");
+        nh.param<double>("/vo/focal", this->focal, 405.6385);   //718
+        nh.param<double>("/vo/xpp", this->xpp, 189.9054);       //607.1928
+        nh.param<double>("/vo/ypp", this->ypp, 139.915);        //185.2157
+        nh.param<double>("/vo/scale", this->scale, 1);
+        nh.param<double>("/vo/scale_threshold", this->scale_threshold, 0.1);
+        nh.param<string>("/vo/tf_frame", this->tf_frame, "camera");
 
         //Parameters for KLT algorithm
         nh.param<double>("/vo/min_feature_recalculate", this->min_feature_recalculate, 14);   //Set min number of feature for redetection
@@ -191,6 +191,17 @@ public:
                 copy_prevFeatures = prevFeatures;
                 featureTracking(prevImage, currImage, prevFeatures, currFeatures, status);
 
+                //Keep in memory min and max number of features detected
+                if(min_num_features > currFeatures.size()){
+                    min_num_features = currFeatures.size();
+                }
+                if(max_num_features < currFeatures.size()){
+                    max_num_features = currFeatures.size();
+                }
+                if(currFeatures.size() < 100){
+                    ROS_ERROR("LESS THAN 100 FEATURES");
+                }
+
                 if(currFeatures.size() > min_feature){   //If enough features have been detected and tracked, compute the essential matrix
                     E = findEssentialMat(currFeatures, prevFeatures, focal, pp, RANSAC, ransac_prob, ransac_threshold, mask);
                     recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
@@ -203,10 +214,11 @@ public:
                               currPts.at<double>(1,i) = currFeatures.at(i).y;
                     }
                     scale = getAbsoluteScale((double)latest_ground_truth.pose.position.x,(double)latest_ground_truth.pose.position.y,(double)latest_ground_truth.pose.position.z);
-                    cout << "Scale is " << scale << endl;
+                    //cout << "Scale is " << scale << endl;
 
-                    //Check if scale is bigger than threshold
-                    if ((scale>scale_threshold)&&(t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))) {
+
+
+                    if ((scale>scale_threshold)&&(t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))){
 
                         //Update ration/translation matrices
                         t_f = t_f + scale*(R_f*t);
@@ -232,7 +244,7 @@ public:
                         ROS_INFO("Odometry updated");
                     }
                     else{
-                        ROS_WARN("scale below %f, or incorrect translation",scale_threshold);
+                        ROS_WARN("scale below %f or wrong dominant motion direction",scale_threshold);
                      }
 
                     //Update previous image and features
@@ -251,8 +263,8 @@ public:
                     int x_truth = int(latest_ground_truth.pose.position.x*5) + display_start_x;
                     int y_truth = int(latest_ground_truth.pose.position.y*5) + display_start_y;
                     int z_truth = int(latest_ground_truth.pose.position.z*5) + display_start_z;
-                    cout<<"x computed = "<<t_f.at<double>(0)<<"  y_computed = "<<t_f.at<double>(1)<<endl;
-                    cout<<"x truth = "<<latest_ground_truth.pose.position.x<<", y_truth = "<<latest_ground_truth.pose.position.y<<endl;
+                    //cout<<"x computed = "<<t_f.at<double>(0)<<"  y_computed = "<<t_f.at<double>(1)<<endl;
+                    //cout<<"x truth = "<<latest_ground_truth.pose.position.x<<", y_truth = "<<latest_ground_truth.pose.position.y<<endl;
 
                     circle(traj, Point(x, y) ,1, CV_RGB(255,0,0), 2);
                     circle(traj, Point(x_truth, y_truth) ,1, CV_RGB(0,255,0), 2);
@@ -284,18 +296,17 @@ public:
                     last_call = curr_call;
                     float elapsed_time = temp_dur.toSec();
 
+                    //Keep in memory min and max computation time
                     if(elapsed_time < min_elapsed_time){
                         min_elapsed_time = elapsed_time;
-                        min_num_features = currFeatures.size();
                     }
                     if(elapsed_time > max_elapsed_time){
                         max_elapsed_time = elapsed_time;
-                        max_num_features = currFeatures.size();
                     }
 
                     //cout << "Execution time estimated to " << elapsed_time << "s" << endl;
                     cout << "Current min execution time = "<<min_elapsed_time << "s, current max execution time = "<<max_elapsed_time<<"s"<<endl;
-                    cout << "Corresponding to min number of features = "<<min_num_features << ", max umber of features = "<<max_num_features<<endl;
+                    cout << "Min number of features = "<<min_num_features << ", Max number of features = "<<max_num_features<<endl;
                     //cout <<"R_t = "<< R_f << endl;
                     //cout <<"t_f = "<< t_f << endl;
 

@@ -1,6 +1,6 @@
 <launch>
 
- <node pkg="fast_klt_vo" type="fast_klt_main" name="vo">
+ <node pkg="fast_klt_vo" type="fast_klt_main" name="vo" output="screen">
 
     <param name="start_x" value="-0.001058"/>
     <param name="start_y" value ="-0.000489"/>
@@ -15,15 +15,13 @@
     <param name="min_feature" value="6"/>
     <param name="ransac_prob" value="0.999"/>
     <param name="ransac_threshold" value="1.0"/>
-  </node>
 
- <node pkg="fast_klt_vo" type="fast_klt_main" name="camera">
     <param name="focal" value="405.6385"/>
     <param name="xpp" value ="189.9054"/>
     <param name="ypp" value="139.915"/>
     <param name="scale" value="1"/>
     <param name="scale_threshold" value="0.1"/>
     <param name="tf_frame" value="camera"/>  
-  </node>
 
+ </node>
 </launch>

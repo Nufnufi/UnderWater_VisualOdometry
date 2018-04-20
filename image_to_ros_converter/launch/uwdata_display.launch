@@ -1,0 +1,15 @@
+<launch>
+
+ <node pkg="image_to_ros_converter" type="image_converter_ros" name="image_converter_ros" output="screen">
+
+    <param name="start_image" value="100"/>
+    <param name="last_image" value ="977"/>
+    <param name="path_to_image" value= "/home/maxime/Datasets/uwcaves/frames/frame_000"/>
+    <param name="image_extension" value=".png"/>
+    <param name="fps" value="3"/>
+    <param name="topic_color" value="/camera/image_raw"/>
+    <param name="topic_grey" value="/grey_image"/>
+
+  </node>
+
+</launch>

@@ -212,6 +212,17 @@ public:
                 copy_prevFeatures = prevFeatures;
                 featureTracking(prevImage, currImage, prevFeatures, currFeatures, status);
 
+                //Keep in memory min and max number of features detected
+                if(min_num_features > currFeatures.size()){
+                    min_num_features = currFeatures.size();
+                }
+                if(max_num_features < currFeatures.size()){
+                    max_num_features = currFeatures.size();
+                }
+                if(currFeatures.size() < 100){
+                    ROS_ERROR("LESS THAN 100 FEATURES");
+                }
+
                 if(currFeatures.size() > min_feature){   //If enough features have been detected and tracked, compute the essential matrix
                     E = findEssentialMat(currFeatures, prevFeatures, focal, pp, RANSAC, ransac_prob, ransac_threshold, mask);
                     recoverPose(E, currFeatures, prevFeatures, R, t, focal, pp, mask);
@@ -309,14 +320,12 @@ public:
 
                     if(elapsed_time < min_elapsed_time){
                         min_elapsed_time = elapsed_time;
-                        min_num_features = currFeatures.size();
                     }
                     if(elapsed_time > max_elapsed_time){
                         max_elapsed_time = elapsed_time;
-                        max_num_features = currFeatures.size();
                     }
-                    cout << "Current min execution time = "<<min_elapsed_time << "s, current max execution time = "<<max_elapsed_time<<"s"<<endl;
-                    cout << "Corresponding to min number of features = "<<min_num_features << ", max number of features = "<<max_num_features<<endl;
+                    cout << "Min execution time = "<<min_elapsed_time << "s, Max execution time = "<<max_elapsed_time<<"s"<<endl;
+                    cout << "Min number of features = "<<min_num_features << ", Max number of features = "<<max_num_features<<endl;
                     //cout << "Execution time estimated to " << elapsed_time << "s" << endl;
 
                     ros::spinOnce();
